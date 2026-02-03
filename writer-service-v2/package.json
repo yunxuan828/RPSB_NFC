@@ -1,0 +1,29 @@
+{
+  "name": "writer-service-v2",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node index.js",
+    "build": "pkg . --out-path dist && copy node_modules\\@pokusew\\pcsclite\\build\\Release\\pcsclite.node dist\\"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "targets": [
+      "node18-win-x64"
+    ],
+    "assets": [
+      "node_modules/**/*"
+    ]
+  },
+  "dependencies": {
+    "@taptrack/ndef": "^1.0.2",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "nfc-pcsc": "^0.8.1",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}

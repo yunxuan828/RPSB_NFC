@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lee Yun Xuan - IT Exec | Ritma Prestasi</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Config: Navy Blue Theme -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f1f5f9', // slate-100
+                            100: '#e2e8f0', // slate-200
+                            500: '#3b82f6', // blue-500
+                            600: '#1e40af', // blue-800 (Primary Action)
+                            700: '#1e3a8a', // blue-900
+                            900: '#0f172a', // slate-900 (Deep Header)
+                        },
+                        dark: {
+                            bg: '#0f172a', // Slate 900
+                            card: '#1e293b', // Slate 800
+                            text: '#f8fafc',
+                            muted: '#94a3b8'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(15, 23, 42, 0.1)', 
+                        'glow': '0 0 20px -5px rgba(59, 130, 246, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { -webkit-font-smoothing: antialiased; transition: background-color 0.3s ease, color 0.3s ease; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .transition-theme { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 300ms; }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-enter { animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .delay-100 { animation-delay: 0.1s; } .delay-200 { animation-delay: 0.2s; } .delay-300 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen flex justify-center items-start sm:items-center p-0 sm:p-4 text-slate-800 dark:text-slate-100 transition-theme">
+
+    <main class="w-full max-w-md bg-white dark:bg-slate-900 sm:rounded-[2.5rem] shadow-soft dark:shadow-none overflow-hidden min-h-screen sm:min-h-[850px] relative flex flex-col transition-theme border dark:border-slate-800">
+        
+        <!-- Header Image -->
+        <div class="h-44 w-full relative overflow-hidden bg-brand-900 group">
+            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop" 
+                 alt="Corporate Building" 
+                 class="w-full h-full object-cover opacity-60 mix-blend-overlay transition-transform duration-700 group-hover:scale-105">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-brand-900/40 to-transparent"></div>
+            
+            <button onclick="toggleDarkMode()" class="absolute top-5 left-5 w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition active:scale-95 border border-white/10 z-20">
+                <i id="themeIcon" class="fa-solid fa-moon"></i>
+            </button>
+            <button onclick="toggleQRModal()" class="absolute top-5 right-5 w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition active:scale-95 border border-white/10 z-20">
+                <i class="fa-solid fa-qrcode"></i>
+            </button>
+        </div>
+
+        <div class="px-6 relative flex-grow pb-24">
+            
+            <div class="relative -mt-16 mb-6 animate-enter flex justify-between items-end">
+                <div class="w-32 h-32 rounded-3xl border-[4px] border-white dark:border-slate-900 shadow-xl overflow-hidden bg-slate-200 transition-theme group cursor-pointer z-10">
+                    <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=400&auto=format&fit=crop" alt="Lee Yun Xuan" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                </div>
+                <div class="mb-2 animate-enter delay-100 hidden sm:block">
+                     <span class="font-heading font-bold text-xl tracking-tight text-brand-700 dark:text-blue-400">Ritma.</span>
+                </div>
+            </div>
+
+            <div class="mb-8 animate-enter delay-100 space-y-4">
+                <div>
+                    <h1 class="text-[1.75rem] font-bold text-slate-900 dark:text-white mb-1.5 font-heading tracking-tight leading-tight">Lee Yun Xuan</h1>
+                    <div class="flex items-center gap-2">
+                        <span class="text-brand-600 dark:text-blue-300 font-semibold text-xs uppercase tracking-widest bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded-md border border-blue-100 dark:border-blue-900/50">IT Exec</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-3 pt-1">
+                    <div class="flex items-center gap-3.5 group">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center shrink-0 text-brand-600 dark:text-blue-400 border border-blue-100 dark:border-slate-700 transition-all duration-300 group-hover:scale-105 group-hover:shadow-sm">
+                            <i class="fa-solid fa-building text-sm"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Company</span>
+                            <span class="text-sm text-slate-700 dark:text-slate-200 font-medium">Ritma Prestasi Sdn Bhd</span>
+                        </div>
+                    </div>
+                    <a href="https://maps.google.com/?q=43+Jalan+Meranti+Jaya+11+Puchong" target="_blank" class="flex items-center gap-3.5 group cursor-pointer">
+                        <div class="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center shrink-0 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-all duration-300 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:border-blue-100 group-hover:scale-105">
+                            <i class="fa-solid fa-location-dot text-sm"></i>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                             <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5 group-hover:text-blue-600 transition-colors">Address</span>
+                             <span class="text-xs text-slate-600 dark:text-slate-300 leading-snug group-hover:text-slate-900 dark:group-hover:text-white transition-colors truncate">
+                                43, Jalan Meranti Jaya 11, Puchong
+                             </span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-300 ml-auto opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-5 gap-3 mb-8 animate-enter delay-200">
+                <button onclick="saveContact()" class="col-span-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 px-6 rounded-2xl shadow-lg shadow-blue-500/20 dark:shadow-blue-900/40 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>保存联系人</span>
+                </button>
+                <button onclick="shareCard()" class="col-span-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl flex items-center justify-center transition-colors border border-slate-200 dark:border-slate-700">
+                    <i class="fa-solid fa-share-nodes text-lg"></i>
+                </button>
+            </div>
+
+            <!-- PERSONAL QUICK ACTIONS -->
+            <div class="grid grid-cols-4 gap-3 mb-8 animate-enter delay-200">
+                <a href="tel:60123689488" class="flex flex-col items-center gap-2 group">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xl shadow-sm border border-slate-100 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700 transition-colors group-hover:text-blue-600 group-hover:border-blue-100">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">电话</span>
+                </a>
+                <a href="mailto:yx.lee@ritmapres.com" class="flex flex-col items-center gap-2 group">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xl shadow-sm border border-slate-100 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700 transition-colors group-hover:text-blue-600 group-hover:border-blue-100">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">邮件</span>
+                </a>
+                <a href="https://wa.me/60123589488" target="_blank" class="flex flex-col items-center gap-2 group">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center text-2xl shadow-sm border border-slate-100 dark:border-slate-700 group-hover:bg-[#25D366]/10 dark:group-hover:bg-[#25D366]/20 transition-colors group-hover:text-[#25D366] group-hover:border-[#25D366]/30">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">WhatsApp</span>
+                </a>
+                <a href="https://linkedin.com" target="_blank" class="flex flex-col items-center gap-2 group">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xl shadow-sm border border-slate-100 dark:border-slate-700 group-hover:bg-[#0077b5]/10 dark:group-hover:bg-[#0077b5]/20 transition-colors group-hover:text-[#0077b5] group-hover:border-[#0077b5]/30">
+                        <i class="fa-brands fa-linkedin-in"></i>
+                    </div>
+                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">LinkedIn</span>
+                </a>
+            </div>
+
+            <div class="space-y-4 animate-enter delay-300">
+                
+                <!-- 1. Personal Bio (Independent Narrative) -->
+                <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-2xl p-5 shadow-sm transition-theme">
+                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Bio</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                        IT Executive at <strong class="text-brand-900 dark:text-white">Ritma Prestasi Sdn Bhd</strong>. 
+                        专注于企业数字化基础设施维护与IT解决方案支持，助力公司在动物医疗保健领域的持续创新。
+                    </p>
+                </div>
+
+                <!-- 2. THE COMPANY PORTAL (Consolidated Module) -->
+                <!-- Unified styling to look like a single premium card -->
+                <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-2xl shadow-sm overflow-hidden transition-theme group hover:border-blue-200 dark:hover:border-slate-600 duration-300">
+                    
+                    <!-- A. Header & Bio -->
+                    <div class="p-6 pb-4">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center text-lg font-bold shrink-0">R</div>
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Ritma Prestasi Sdn Bhd</h3>
+                                <p class="text-[10px] text-blue-600 dark:text-blue-300 font-medium uppercase tracking-wide">Company Profile</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed border-l-2 border-blue-100 dark:border-slate-700 pl-3">
+                            Innovative and Trusted Multinational Animal Healthcare Solutions Provider. 
+                            致力于提供高质量的动物保健产品，业务涵盖牲畜、宠物及生物安全领域。
+                        </p>
+                    </div>
+
+                    <!-- B. Social Matrix (Horizontal Row) -->
+                    <!-- This breaks the list monotony and saves space -->
+                    <div class="px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700 flex justify-around items-center">
+                        <!-- Company LinkedIn -->
+                        <a href="https://www.linkedin.com/company/ritma-prestasi-sdn-bhd" target="_blank" class="flex flex-col items-center gap-1.5 group/icon" title="Company LinkedIn">
+                            <div class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[#0077b5] text-lg shadow-sm group-hover/icon:scale-110 group-hover/icon:border-[#0077b5] transition-all">
+                                <i class="fa-brands fa-linkedin-in"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover/icon:text-[#0077b5] transition-colors">LinkedIn</span>
+                        </a>
+
+                        <!-- Facebook -->
+                        <a href="https://facebook.com/ritmapres" target="_blank" class="flex flex-col items-center gap-1.5 group/icon" title="Facebook">
+                            <div class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[#1877F2] text-lg shadow-sm group-hover/icon:scale-110 group-hover/icon:border-[#1877F2] transition-all">
+                                <i class="fa-brands fa-facebook-f"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover/icon:text-[#1877F2] transition-colors">Facebook</span>
+                        </a>
+
+                        <!-- Instagram -->
+                        <a href="https://instagram.com" target="_blank" class="flex flex-col items-center gap-1.5 group/icon" title="Instagram">
+                            <div class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-transparent bg-clip-text bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 text-lg shadow-sm group-hover/icon:scale-110 group-hover/icon:border-red-400 transition-all">
+                                <i class="fa-brands fa-instagram text-pink-500"></i>
+                            </div>
+                            <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover/icon:text-pink-500 transition-colors">Instagram</span>
+                        </a>
+                    </div>
+
+                    <!-- C. Official Websites (Action List) -->
+                    <div>
+                        <a href="https://www.ritmapres.com/" target="_blank" class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition border-t border-slate-100 dark:border-slate-700 group/link">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-globe text-slate-400 dark:text-slate-500 group-hover/link:text-blue-600 transition-colors"></i>
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Ritma Official Site</span>
+                            </div>
+                            <i class="fa-solid fa-arrow-right text-xs text-slate-300 dark:text-slate-600 group-hover/link:text-blue-600 group-hover/link:translate-x-1 transition-all"></i>
+                        </a>
+                        <a href="https://www.ritmapres.com/about-us/" target="_blank" class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition border-t border-slate-100 dark:border-slate-700 group/link">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-link text-slate-400 dark:text-slate-500 group-hover/link:text-blue-600 transition-colors"></i>
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Global Partners</span>
+                            </div>
+                            <i class="fa-solid fa-arrow-right text-xs text-slate-300 dark:text-slate-600 group-hover/link:text-blue-600 group-hover/link:translate-x-1 transition-all"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer Brand -->
+                <div class="mt-8 mb-4 flex justify-center opacity-50">
+                    <div class="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                </div>
+
+            </div>
+            
+            <div class="mt-2 text-center pb-2">
+                <p class="text-[10px] text-slate-300 dark:text-slate-600 font-medium uppercase tracking-widest">Digital Business Card</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- QR Modal -->
+    <div id="qrModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-brand-900/80 backdrop-blur-sm transition-opacity" onclick="toggleQRModal()"></div>
+        <div class="absolute inset-x-0 bottom-0 sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2 w-full sm:w-[350px] bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl p-8 transform transition-transform duration-300 translate-y-full border-t sm:border border-slate-100 dark:border-slate-700" id="qrModalContent">
+            <div class="flex flex-col items-center">
+                <div class="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mb-6 sm:hidden"></div>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">扫码联系我</h3>
+                <div class="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 mb-6">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VCARD-Ritma-LeeYunXuan" alt="QR Code" class="w-48 h-48 rounded-xl">
+                </div>
+                <button onclick="toggleQRModal()" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark'); icon.classList.replace('fa-sun', 'fa-moon'); localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark'); icon.classList.replace('fa-moon', 'fa-sun'); localStorage.theme = 'dark';
+            }
+        }
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark'); document.getElementById('themeIcon').classList.replace('fa-moon', 'fa-sun');
+        }
+        function toggleQRModal() {
+            const modal = document.getElementById('qrModal');
+            const content = document.getElementById('qrModalContent');
+            if (modal.classList.contains('hidden')) { modal.classList.remove('hidden'); setTimeout(() => content.classList.remove('translate-y-full'), 10); } 
+            else { content.classList.add('translate-y-full'); setTimeout(() => modal.classList.add('hidden'), 300); }
+        }
+        function saveContact() { alert("下载 vCard"); }
+        function shareCard() { navigator.clipboard.writeText(window.location.href); alert("链接已复制"); }
+    </script>
+</body>
+</html>

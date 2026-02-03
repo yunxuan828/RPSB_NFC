@@ -1,0 +1,7 @@
+{
+  "name": "Ritma DBC Admin",
+  "description": "Internal Digital Business Card Management System with NFC Writer capabilities.",
+  "requestFramePermissions": [
+    "usb"
+  ]
+}
