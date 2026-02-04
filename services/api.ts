@@ -1,6 +1,58 @@
 
 import { Company, User, DashboardStats } from '../types';
 
+// CRM Types
+export interface Customer {
+  id: string;
+  full_name: string;
+  customer_company_name?: string;
+  job_title?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  address?: string;
+  website?: string;
+  birthday?: string;
+  status: 'lead' | 'active' | 'silent' | 'inactive';
+  created_at: string;
+  creator?: { id: string; name: string };
+  namecards?: CustomerNamecard[];
+  events?: CustomerEvent[];
+}
+
+export interface CustomerNamecard {
+  id: string;
+  front_image_url: string;
+  back_image_url?: string;
+  ocr_json?: any;
+}
+
+export interface CustomerEvent {
+  id: string;
+  customer_id: string;
+  title: string;
+  start_at: string;
+  end_at?: string;
+  all_day: boolean;
+  type: 'birthday' | 'follow_up' | 'meeting' | 'reminder';
+  notes?: string;
+}
+
+export interface NamecardScanResult {
+  namecard_id: string;
+  front_image_url: string;
+  back_image_url?: string;
+  extracted_fields: Partial<Customer>;
+  ocr_json: any;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  total: number;
+}
+
 // Access environment variables safely
 const env = (import.meta as any).env || {};
 const USE_MOCK = env.VITE_USE_MOCK === 'true'; // Default to false!
@@ -87,6 +139,19 @@ interface ApiService {
   updateUser(id: string, updates: Partial<User>): Promise<User>;
   deleteUser(id: string): Promise<void>;
   incrementCardWriteCount(): Promise<void>;
+  
+  // CRM
+  scanNamecard(formData: FormData): Promise<NamecardScanResult>;
+  listCustomers(params?: { status?: string, q?: string, page?: number }): Promise<PaginatedResponse<Customer>>;
+  getCustomer(id: string): Promise<Customer>;
+  createCustomer(customer: Partial<Customer>): Promise<Customer>;
+  updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer>;
+  deleteCustomer(id: string): Promise<void>;
+  
+  listEvents(customerId: string): Promise<CustomerEvent[]>;
+  createEvent(customerId: string, event: Partial<CustomerEvent>): Promise<CustomerEvent>;
+  updateEvent(eventId: string, event: Partial<CustomerEvent>): Promise<CustomerEvent>;
+  deleteEvent(eventId: string): Promise<void>;
 }
 
 // --- MOCK SERVICE IMPLEMENTATION ---
@@ -248,6 +313,85 @@ class MockApiService implements ApiService {
     await this.delay(200);
     this.cardsWrittenCount++;
   }
+
+  // --- MOCK CRM ---
+  async scanNamecard(formData: FormData): Promise<NamecardScanResult> {
+    await this.delay(1000);
+    return {
+      namecard_id: 'nc_' + Math.random().toString(36).substr(2, 5),
+      front_image_url: 'https://via.placeholder.com/600x400?text=Front+Card',
+      extracted_fields: {
+        full_name: 'Mock Customer',
+        customer_company_name: 'Mock Industries',
+        email: 'customer@mock.com',
+        phone: '123-456-7890'
+      },
+      ocr_json: {}
+    };
+  }
+
+  async listCustomers(params?: any): Promise<PaginatedResponse<Customer>> {
+    await this.delay(400);
+    return {
+      data: [
+        { 
+          id: 'c1', full_name: 'Alice Wonder', customer_company_name: 'Wonderland', 
+          status: 'lead', created_at: '2023-10-01', email: 'alice@example.com' 
+        },
+        { 
+          id: 'c2', full_name: 'Bob Builder', customer_company_name: 'Construction Co', 
+          status: 'active', created_at: '2023-10-05', email: 'bob@example.com' 
+        }
+      ],
+      current_page: 1,
+      last_page: 1,
+      total: 2
+    };
+  }
+
+  async getCustomer(id: string): Promise<Customer> {
+    await this.delay(300);
+    return { 
+      id, full_name: 'Alice Wonder', customer_company_name: 'Wonderland', 
+      status: 'lead', created_at: '2023-10-01', email: 'alice@example.com',
+      job_title: 'Explorer', phone: '555-0199', birthday: '1990-05-15'
+    };
+  }
+
+  async createCustomer(customer: Partial<Customer>): Promise<Customer> {
+    await this.delay(500);
+    return { ...customer, id: 'c_' + Math.random(), created_at: new Date().toISOString() } as Customer;
+  }
+
+  async updateCustomer(id: string, updates: Partial<Customer>): Promise<Customer> {
+    await this.delay(300);
+    return { id, ...updates, created_at: '2023-10-01' } as Customer;
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    await this.delay(300);
+  }
+
+  async listEvents(customerId: string): Promise<CustomerEvent[]> {
+    await this.delay(200);
+    return [
+      { id: 'e1', customer_id: customerId, title: 'Follow up call', start_at: new Date().toISOString(), all_day: false, type: 'follow_up' }
+    ];
+  }
+
+  async createEvent(customerId: string, event: Partial<CustomerEvent>): Promise<CustomerEvent> {
+    await this.delay(300);
+    return { ...event, id: 'e_' + Math.random(), customer_id: customerId } as CustomerEvent;
+  }
+
+  async updateEvent(eventId: string, event: Partial<CustomerEvent>): Promise<CustomerEvent> {
+    await this.delay(300);
+    return { ...event, id: eventId, customer_id: 'c1' } as CustomerEvent;
+  }
+
+  async deleteEvent(eventId: string): Promise<void> {
+    await this.delay(300);
+  }
 }
 
 // --- REAL LARAVEL API SERVICE IMPLEMENTATION ---
@@ -255,13 +399,19 @@ class RealApiService implements ApiService {
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
+      // Handle FormData specifically to avoid setting Content-Type manually (browser does it with boundary)
+      const headers: any = {
+        'Accept': 'application/json',
+        ...options.headers,
+      };
+
+      if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+      }
+
       const response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          ...options.headers,
-        },
+        headers,
         // Include credentials (cookies) for Laravel Sanctum/Session
         credentials: 'include',
       });
@@ -269,6 +419,11 @@ class RealApiService implements ApiService {
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error.message || `API Error: ${response.statusText}`);
+      }
+
+      // Check for 204 No Content
+      if (response.status === 204) {
+        return {} as T;
       }
 
       return response.json();
@@ -341,6 +496,72 @@ class RealApiService implements ApiService {
   async incrementCardWriteCount(): Promise<void> {
     return this.request<void>('/cards/written', {
       method: 'POST'
+    });
+  }
+
+  // --- CRM ---
+
+  async scanNamecard(formData: FormData): Promise<NamecardScanResult> {
+    return this.request<NamecardScanResult>('/crm/namecards/scan', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async listCustomers(params?: { status?: string, q?: string, page?: number }): Promise<PaginatedResponse<Customer>> {
+    const query = new URLSearchParams();
+    if (params?.status && params.status !== 'all') query.append('status', params.status);
+    if (params?.q) query.append('q', params.q);
+    if (params?.page) query.append('page', params.page.toString());
+    
+    return this.request<PaginatedResponse<Customer>>(`/crm/customers?${query.toString()}`);
+  }
+
+  async getCustomer(id: string): Promise<Customer> {
+    return this.request<Customer>(`/crm/customers/${id}`);
+  }
+
+  async createCustomer(customer: Partial<Customer>): Promise<Customer> {
+    return this.request<Customer>('/crm/customers', {
+      method: 'POST',
+      body: JSON.stringify(customer)
+    });
+  }
+
+  async updateCustomer(id: string, updates: Partial<Customer>): Promise<Customer> {
+    return this.request<Customer>(`/crm/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    return this.request<void>(`/crm/customers/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async listEvents(customerId: string): Promise<CustomerEvent[]> {
+    return this.request<CustomerEvent[]>(`/crm/customers/${customerId}/events`);
+  }
+
+  async createEvent(customerId: string, event: Partial<CustomerEvent>): Promise<CustomerEvent> {
+    return this.request<CustomerEvent>(`/crm/customers/${customerId}/events`, {
+      method: 'POST',
+      body: JSON.stringify(event)
+    });
+  }
+
+  async updateEvent(eventId: string, event: Partial<CustomerEvent>): Promise<CustomerEvent> {
+    return this.request<CustomerEvent>(`/crm/events/${eventId}`, {
+      method: 'PUT',
+      body: JSON.stringify(event)
+    });
+  }
+
+  async deleteEvent(eventId: string): Promise<void> {
+    return this.request<void>(`/crm/events/${eventId}`, {
+      method: 'DELETE'
     });
   }
 }

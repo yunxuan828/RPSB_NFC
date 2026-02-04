@@ -22,6 +22,9 @@ services:
       DB_DATABASE: ritma_nfc_db
       DB_USERNAME: ritma_nfc_user
       DB_PASSWORD: ritma_nfc_password
+      # CRM
+      OCR_URL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+      OPENROUTER_API_KEY: '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'
     depends_on:
       - db
 

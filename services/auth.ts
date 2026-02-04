@@ -3,38 +3,58 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager';
+  role: 'admin' | 'manager' | 'employee';
+  type: 'admin' | 'employee'; // Backend distinguishes types
+  company_id?: string;
 }
 
 const AUTH_KEY = 'nexus_auth_user';
 // Accessing env via type casting to avoid TS error about 'env' not existing on ImportMeta
 const env = (import.meta as any).env || {};
-const USE_MOCK = env.VITE_USE_MOCK !== 'false';
-const API_URL = env.VITE_API_URL || 'http://localhost:8000/api';
+// Use mock only if explicitly true
+const USE_MOCK = env.VITE_USE_MOCK === 'true';
+const API_URL = env.VITE_API_URL || '/api';
 
 export const auth = {
-  login: async (email: string, password: string): Promise<AuthUser> => {
+  login: async (email: string, password: string, type: 'admin' | 'employee' = 'admin'): Promise<AuthUser> => {
     
     if (USE_MOCK) {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Mock Credential Check
-      if (email === 'admin@nexus.com' && password === 'admin') {
+      if (type === 'admin' && email === 'admin@nexus.com' && password === 'admin') {
         const user: AuthUser = {
           id: '1',
           name: 'Admin User',
           email,
-          role: 'admin'
+          role: 'admin',
+          type: 'admin'
         };
         localStorage.setItem(AUTH_KEY, JSON.stringify(user));
         return user;
       }
+
+      if (type === 'employee' && password === 'demo') {
+        const user: AuthUser = {
+           id: 'emp_1',
+           name: 'Demo Employee',
+           email,
+           role: 'employee',
+           type: 'employee',
+           company_id: '1'
+        };
+        localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+        return user;
+      }
+
       throw new Error('Invalid credentials');
     } else {
       // Real Backend Call
       try {
-        const response = await fetch(`${API_URL}/login`, {
+        const endpoint = type === 'employee' ? '/employee/login' : '/login';
+        
+        const response = await fetch(`${API_URL}${endpoint}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -50,6 +70,9 @@ export const auth = {
         }
 
         const user = await response.json();
+        // Ensure type is set if backend doesn't return it
+        user.type = user.type || type; 
+        
         localStorage.setItem(AUTH_KEY, JSON.stringify(user));
         return user;
       } catch (error: any) {

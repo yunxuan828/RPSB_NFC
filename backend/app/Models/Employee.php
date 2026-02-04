@@ -2,19 +2,37 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Employee extends Model
+class Employee extends Authenticatable
 {
+    use HasFactory, Notifiable;
+
     protected $fillable = [
-        'company_id', 'full_name', 'email', 'job_title', 
+        'company_id', 'full_name', 'email', 'password', 'role', 'job_title', 
         'phone', 'whatsapp', 'linkedin', 'instagram', 'facebook', 'bio', 
         'profile_url', 'avatar_path', 'status', 'slug'
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'password' => 'hashed',
     ];
 
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+    
+    public function customers()
+    {
+        return $this->hasMany(Customer::class, 'collected_by_employee_id');
     }
 
     // Helper to format for React Frontend
@@ -46,6 +64,7 @@ class Employee extends Model
             'profileUrl' => $profileUrl,
             'avatarUrl' => $this->avatar_path ? asset('storage/' . $this->avatar_path) : null,
             'status' => $this->status,
+            'hasPassword' => !empty($this->password), // Helper to show in admin if they can login
         ];
     }
 }

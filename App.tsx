@@ -1,12 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users as UsersIcon, CreditCard, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Building2, Users as UsersIcon, CreditCard, LogOut, Menu, X, Contact } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Companies from './pages/Companies';
 import Users from './pages/Users';
 import WriteCard from './pages/WriteCard';
 import PublicProfile from './pages/PublicProfile';
+import ScanNamecard from './pages/crm/ScanNamecard';
+import Customers from './pages/crm/Customers';
+import CustomerProfile from './pages/crm/CustomerProfile';
+import PortalHome from './pages/portal/PortalHome';
+import PortalScan from './pages/portal/PortalScan';
 import Login from './pages/Login';
 import { auth } from './services/auth';
 import { Modal, Button } from './components/UI';
@@ -45,9 +50,16 @@ const App: React.FC = () => {
     setIsAuthenticated(auth.isAuthenticated());
   }, []);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
+    const handleLogin = () => {
+      setIsAuthenticated(true);
+      const user = auth.getUser();
+      // Redirect based on role immediately after login
+      if (user?.type === 'employee') {
+         // Force reload or navigation to ensure router catches up
+         // window.location.href = '/#/portal'; // if hash router
+         // or just rely on state update re-render
+      }
+    };
 
   const handleLogout = () => {
     auth.logout();
@@ -61,6 +73,12 @@ const App: React.FC = () => {
         <NavLink to="/" icon={LayoutDashboard} onClick={onLinkClick}>Dashboard</NavLink>
         <NavLink to="/companies" icon={Building2} onClick={onLinkClick}>Companies</NavLink>
         <NavLink to="/users" icon={UsersIcon} onClick={onLinkClick}>Users</NavLink>
+        
+        <div className="pt-4 mt-4 border-t border-slate-100">
+          <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">CRM</p>
+          <NavLink to="/crm/customers" icon={Contact} onClick={onLinkClick}>Customers</NavLink>
+        </div>
+
         <div className="pt-4 mt-4 border-t border-slate-100">
           <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Hardware</p>
           <NavLink to="/write" icon={CreditCard} onClick={onLinkClick}>Write Card (ACR122U)</NavLink>
@@ -96,8 +114,37 @@ const App: React.FC = () => {
       );
     }
 
+    // Portal Routes
+    if (location.pathname.startsWith('/portal')) {
+      if (!isAuthenticated) return <Navigate to="/login" replace />;
+      
+      // Basic role check: Admins can see everything, Employees confined to portal
+      const user = auth.getUser();
+      if (user?.type === 'admin') {
+         // Admins *can* visit portal, but usually use dashboard. 
+         // Let's allow them.
+      } else if (user?.type === 'employee' && !location.pathname.startsWith('/portal')) {
+         return <Navigate to="/portal" replace />;
+      }
+
+      return (
+        <Routes>
+          <Route path="/portal" element={<PortalHome />} />
+          <Route path="/portal/scan" element={<PortalScan />} />
+          <Route path="/portal/customers/:id" element={<CustomerProfile />} />
+          <Route path="*" element={<Navigate to="/portal" replace />} />
+        </Routes>
+      );
+    }
+
     if (!isAuthenticated) {
       return <Login onLogin={handleLogin} />;
+    }
+
+    // Admin Dashboard Guard
+    const user = auth.getUser();
+    if (user?.type === 'employee') {
+      return <Navigate to="/portal" replace />;
     }
 
     return (
@@ -148,6 +195,12 @@ const App: React.FC = () => {
                 <Route path="/companies" element={<Companies />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/write" element={<WriteCard />} />
+                
+                {/* CRM Routes */}
+                <Route path="/crm/scan" element={<ScanNamecard />} />
+                <Route path="/crm/customers" element={<Customers />} />
+                <Route path="/crm/customers/:id" element={<CustomerProfile />} />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
