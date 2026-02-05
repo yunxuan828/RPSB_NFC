@@ -27,3 +27,4 @@ dist-ssr
 .env
 .env.localnfc-v2.tar.gz
 nfc-v2.tar.gz
+deployment/docker/.env
