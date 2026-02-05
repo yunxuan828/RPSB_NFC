@@ -15,7 +15,8 @@ services:
       APP_NAME: 'Ritma DBC'
       APP_ENV: production
       APP_DEBUG: 'false'
-      APP_URL: 'https://dbc.imritma.com'
+      APP_URL: '${APP_URL:-http://45.127.6.225:8600}'
+      # Session: leave unset for IP access (e.g. :8600). For HTTPS domain set in .env: SESSION_DOMAIN=.imritma.com SESSION_SECURE_COOKIE=true
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306

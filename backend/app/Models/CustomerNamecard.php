@@ -14,6 +14,7 @@ class CustomerNamecard extends Model
         'ocr_raw_text_back',
         'ocr_json',
         'created_by',
+        'collected_by_employee_id',
     ];
 
     protected $casts = [

@@ -62,10 +62,29 @@ const App: React.FC = () => {
     };
 
   const handleLogout = () => {
+    // 1. Clear Local Auth
     auth.logout();
     setIsAuthenticated(false);
     setShowLogoutConfirm(false);
+    
+    // 2. Redirect based on user type logic is handled by router guard or login page
+    // Force a location change to ensure deep router resets if needed, 
+    // but typically state change is enough.
   };
+
+  useEffect(() => {
+    // Listen for storage events in case logout happens in another tab or component
+    // Also listen for custom 'auth-change' event for same-window updates
+    const checkAuth = () => setIsAuthenticated(auth.isAuthenticated());
+    
+    window.addEventListener('storage', checkAuth);
+    window.addEventListener('auth-change', checkAuth);
+    
+    return () => {
+        window.removeEventListener('storage', checkAuth);
+        window.removeEventListener('auth-change', checkAuth);
+    };
+  }, []);
 
   const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => (
     <div className="flex flex-col h-full justify-between py-6">

@@ -42,10 +42,17 @@ class NamecardController extends Controller
         }
 
         // 3. Save Namecard Record (Unlinked to customer initially)
-        // Handle 'created_by' - if Employee, they don't have a User ID. 
-        // We might need to make created_by nullable in migration or use a dummy ID / separate column.
-        // For now, let's assume we adjusted the schema or use a fallback if user() is Employee.
-        $userId = $request->user() instanceof \App\Models\User ? $request->user()->id : 1; // Fallback to Admin 1 or handle properly
+        $user = $request->user();
+        
+        $collectedByEmployeeId = null;
+        $createdBy = null;
+
+        if ($user instanceof \App\Models\Employee) {
+            $collectedByEmployeeId = $user->id;
+        } else {
+            // Assume User/Admin
+            $createdBy = $user && $user instanceof \App\Models\User ? $user->id : 1; 
+        }
 
         $namecard = CustomerNamecard::create([
             'customer_id' => null,
@@ -54,7 +61,8 @@ class NamecardController extends Controller
             'ocr_raw_text_front' => $ocrResult['raw_text_front'] ?? null,
             'ocr_raw_text_back' => $ocrResult['raw_text_back'] ?? null,
             'ocr_json' => $ocrResult,
-            'created_by' => $userId,
+            'created_by' => $createdBy,
+            'collected_by_employee_id' => $collectedByEmployeeId,
         ]);
 
         // 4. Return Data

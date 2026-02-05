@@ -5,12 +5,12 @@ import {
   ArrowLeft, Edit, Trash2, Plus, Clock 
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input'; // Check imports
+import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'; // Assuming tabs exist or I'll implement simple ones
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { api, Customer, CustomerEvent } from '../../services/api';
-import { Modal } from '../../components/UI'; // Assuming UI.tsx has Modal
+import { Modal } from '../../components/UI';
+import { auth } from '../../services/auth';
 
 const CustomerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +18,7 @@ const CustomerProfile: React.FC = () => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [events, setEvents] = useState<CustomerEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const currentUser = auth.getUser();
   
   // Event Modal State
   const [showEventModal, setShowEventModal] = useState(false);
@@ -62,6 +63,18 @@ const CustomerProfile: React.FC = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!customer || !window.confirm('Are you sure you want to delete this lead? This action cannot be undone.')) return;
+    
+    try {
+      await api.deleteCustomer(customer.id);
+      navigate('/crm/customers');
+    } catch (error) {
+      console.error('Failed to delete customer', error);
+      alert('Failed to delete customer. You might not have permission.');
+    }
+  };
+
   if (loading) return <div className="p-8 text-center">Loading...</div>;
   if (!customer) return <div className="p-8 text-center">Customer not found</div>;
 
@@ -81,7 +94,11 @@ const CustomerProfile: React.FC = () => {
           <p className="text-slate-500">{customer.job_title} at {customer.customer_company_name}</p>
         </div>
         <div className="ml-auto flex gap-2">
-          {/* <Button variant="outline">Edit</Button> */}
+          {(currentUser?.role === 'admin' || (currentUser?.role === 'employee' && customer.collected_by_employee_id == currentUser?.id)) && (
+            <Button variant="destructive" size="sm" onClick={handleDelete}>
+              <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
+            </Button>
+          )}
         </div>
       </div>
 

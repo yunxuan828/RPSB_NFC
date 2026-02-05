@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Loader2 } from 'lucide-react';
+import { Plus, Search, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import {
@@ -13,6 +13,7 @@ import {
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
 import { api, Customer } from '../../services/api';
+import { auth } from '../../services/auth';
 
 const Customers: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Customers: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const currentUser = auth.getUser();
 
   useEffect(() => {
     fetchCustomers();
@@ -52,6 +54,19 @@ const Customers: React.FC = () => {
       case 'silent': return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Silent</Badge>;
       case 'inactive': return <Badge variant="destructive">Inactive</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, customerId: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this lead?')) return;
+
+    try {
+      await api.deleteCustomer(customerId);
+      setCustomers(customers.filter(c => c.id !== customerId));
+    } catch (error) {
+      console.error('Failed to delete customer', error);
+      alert('Failed to delete customer. You might not have permission.');
     }
   };
 
@@ -107,6 +122,7 @@ const Customers: React.FC = () => {
               <TableHead>Contact</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -143,6 +159,18 @@ const Customers: React.FC = () => {
                   <TableCell>{getStatusBadge(customer.status)}</TableCell>
                   <TableCell className="text-slate-500">
                     {new Date(customer.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {(currentUser?.role === 'admin' || (currentUser?.role === 'employee' && customer.collected_by_employee_id == currentUser?.id)) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={(e) => handleDelete(e, customer.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

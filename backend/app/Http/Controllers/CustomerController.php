@@ -118,9 +118,19 @@ class CustomerController extends Controller
         return response()->json($customer);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $customer = Customer::findOrFail($id);
+        
+        $user = $request->user();
+        
+        // If user is an Employee, ensure they own the lead
+        if ($user instanceof \App\Models\Employee) {
+            if ($customer->collected_by_employee_id !== $user->id) {
+                return response()->json(['message' => 'Unauthorized. You can only delete your own leads.'], 403);
+            }
+        }
+
         $customer->delete();
         return response()->noContent();
     }

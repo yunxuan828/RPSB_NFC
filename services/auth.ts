@@ -87,6 +87,7 @@ export const auth = {
   },
 
   logout: async () => {
+    localStorage.removeItem(AUTH_KEY); // clear immediately so redirect sees clean state
     if (!USE_MOCK) {
       try {
         await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
@@ -96,7 +97,6 @@ export const auth = {
     } else {
       await new Promise(resolve => setTimeout(resolve, 300));
     }
-    localStorage.removeItem(AUTH_KEY);
   },
 
   getUser: (): AuthUser | null => {

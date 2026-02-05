@@ -39,20 +39,22 @@ Route::put('/users/{id}', [EmployeeController::class, 'update']);
 Route::delete('/users/{id}', [EmployeeController::class, 'destroy']);
 
 // CRM Module
-Route::group(['prefix' => 'crm'], function () {
-    // Namecard Scanning
-    Route::post('/namecards/scan', [NamecardController::class, 'scan']);
+Route::middleware('auth:web,employee')->group(function () {
+    Route::group(['prefix' => 'crm'], function () {
+        // Namecard Scanning
+        Route::post('/namecards/scan', [NamecardController::class, 'scan']);
 
-    // Customers
-    Route::get('/customers', [CustomerController::class, 'index']);
-    Route::post('/customers', [CustomerController::class, 'store']);
-    Route::get('/customers/{id}', [CustomerController::class, 'show']);
-    Route::put('/customers/{id}', [CustomerController::class, 'update']);
-    Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
+        // Customers
+        Route::get('/customers', [CustomerController::class, 'index']);
+        Route::post('/customers', [CustomerController::class, 'store']);
+        Route::get('/customers/{id}', [CustomerController::class, 'show']);
+        Route::put('/customers/{id}', [CustomerController::class, 'update']);
+        Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
 
-    // Events
-    Route::get('/customers/{id}/events', [CustomerController::class, 'listEvents']);
-    Route::post('/customers/{id}/events', [CustomerController::class, 'storeEvent']);
-    Route::put('/events/{eventId}', [CustomerController::class, 'updateEvent']);
-    Route::delete('/events/{eventId}', [CustomerController::class, 'deleteEvent']);
+        // Events
+        Route::get('/customers/{id}/events', [CustomerController::class, 'listEvents']);
+        Route::post('/customers/{id}/events', [CustomerController::class, 'storeEvent']);
+        Route::put('/events/{eventId}', [CustomerController::class, 'updateEvent']);
+        Route::delete('/events/{eventId}', [CustomerController::class, 'deleteEvent']);
+    });
 });

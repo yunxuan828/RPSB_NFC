@@ -12,6 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust reverse proxy (nginx) so Laravel sees correct scheme/host for session cookies
+        $middleware->trustProxies(at: '*');
         // Enable sessions and cookies for API routes so session-based auth works
         $middleware->appendToGroup('api', [
             \Illuminate\Cookie\Middleware\EncryptCookies::class,

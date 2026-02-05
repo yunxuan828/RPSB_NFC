@@ -54,6 +54,8 @@ const PortalHome: React.FC = () => {
 
   const handleLogout = () => {
     auth.logout();
+    // Dispatch a custom event so App.tsx can react immediately if in same window
+    window.dispatchEvent(new Event('auth-change')); 
     navigate('/login');
   };
 

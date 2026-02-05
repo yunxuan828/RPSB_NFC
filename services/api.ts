@@ -16,6 +16,7 @@ export interface Customer {
   status: 'lead' | 'active' | 'silent' | 'inactive';
   created_at: string;
   creator?: { id: string; name: string };
+  collected_by_employee_id?: number;
   namecards?: CustomerNamecard[];
   events?: CustomerEvent[];
 }
@@ -417,6 +418,13 @@ class RealApiService implements ApiService {
       });
 
       if (!response.ok) {
+        // Stale/invalid session (e.g. old cookie from IP vs domain) → clear and send to login
+        if (response.status === 401 && typeof window !== 'undefined') {
+          const { auth } = await import('./auth');
+          auth.logout();
+          window.location.href = '/login';
+          return Promise.reject(new Error('Session expired'));
+        }
         const error = await response.json().catch(() => ({}));
         throw new Error(error.message || `API Error: ${response.statusText}`);
       }
