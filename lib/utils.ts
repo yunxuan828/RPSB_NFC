@@ -12,7 +12,8 @@ export function getFullImageUrl(path: string | null | undefined) {
     if (path.startsWith('http')) return path; // Already absolute URL
 
     // Default backend URL
-    const baseUrl = (import.meta as any).env.VITE_BACKEND_URL || 'http://localhost:8000';
+    const defaultUrl = import.meta.env.DEV ? 'http://localhost:8000' : '';
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || defaultUrl;
 
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `${baseUrl}${cleanPath}`;

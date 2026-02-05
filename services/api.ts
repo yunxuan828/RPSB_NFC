@@ -417,12 +417,16 @@ class RealApiService implements ApiService {
         credentials: 'include',
       });
 
-      if (!response.ok) {
+        if (!response.ok) {
         // Stale/invalid session (e.g. old cookie from IP vs domain) → clear and send to login
         if (response.status === 401 && typeof window !== 'undefined') {
           const { auth } = await import('./auth');
+          const wasAuthenticated = auth.isAuthenticated();
           auth.logout();
-          window.location.href = '/login';
+          // Only hard-redirect if we still had auth (e.g. session expired). Avoid double redirect during explicit logout.
+          if (wasAuthenticated) {
+            window.location.href = '/login';
+          }
           return Promise.reject(new Error('Session expired'));
         }
         const error = await response.json().catch(() => ({}));

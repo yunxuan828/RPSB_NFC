@@ -88,8 +88,8 @@ class CustomerController extends Controller
         
         // Transform namecards to include full URLs
         $customer->namecards->transform(function ($nc) {
-            $nc->front_image_url = asset('storage/' . $nc->front_image_path);
-            $nc->back_image_url = $nc->back_image_path ? asset('storage/' . $nc->back_image_path) : null;
+            $nc->front_image_url = '/storage/' . $nc->front_image_path;
+            $nc->back_image_url = $nc->back_image_path ? '/storage/' . $nc->back_image_path : null;
             return $nc;
         });
 

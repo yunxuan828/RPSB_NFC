@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, LogOut, Loader2, Search, User, ChevronRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { Modal, Button as UIButton } from '../../components/UI';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import {
   Table,
@@ -23,6 +24,8 @@ const PortalHome: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -52,11 +55,18 @@ const PortalHome: React.FC = () => {
     fetchLeads();
   };
 
-  const handleLogout = () => {
-    auth.logout();
-    // Dispatch a custom event so App.tsx can react immediately if in same window
-    window.dispatchEvent(new Event('auth-change')); 
-    navigate('/login');
+  const handleLogoutClick = () => setShowLogoutConfirm(true);
+
+  const handleLogoutConfirm = async () => {
+    setLoggingOut(true);
+    try {
+      await auth.logout();
+      window.dispatchEvent(new Event('auth-change'));
+      navigate('/login', { replace: true });
+    } finally {
+      setLoggingOut(false);
+      setShowLogoutConfirm(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -77,7 +87,7 @@ const PortalHome: React.FC = () => {
            <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold">R</div>
            <span className="font-semibold text-lg">My Leads</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleLogout}>
+        <Button variant="ghost" size="icon" onClick={handleLogoutClick} disabled={loggingOut}>
           <LogOut className="h-5 w-5 text-slate-500" />
         </Button>
       </header>
@@ -191,6 +201,24 @@ const PortalHome: React.FC = () => {
           </Table>
         </div>
       </main>
+
+      {/* Logout Confirmation Modal (same as admin) */}
+      <Modal
+        isOpen={showLogoutConfirm}
+        onClose={() => !loggingOut && setShowLogoutConfirm(false)}
+        title="Confirm Logout"
+        description="Are you sure you want to end your session?"
+        footer={
+          <>
+            <UIButton variant="ghost" onClick={() => setShowLogoutConfirm(false)} disabled={loggingOut}>Cancel</UIButton>
+            <UIButton variant="destructive" onClick={handleLogoutConfirm} disabled={loggingOut}>
+              {loggingOut ? 'Logging out…' : 'Logout'}
+            </UIButton>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">You will need to sign in again to access the portal.</p>
+      </Modal>
     </div>
   );
 };

@@ -62,7 +62,7 @@ class Employee extends Authenticatable
             'facebook' => $this->facebook,
             'bio' => $this->bio,
             'profileUrl' => $profileUrl,
-            'avatarUrl' => $this->avatar_path ? asset('storage/' . $this->avatar_path) : null,
+            'avatarUrl' => $this->avatar_path ? '/storage/' . $this->avatar_path : null,
             'status' => $this->status,
             'hasPassword' => !empty($this->password), // Helper to show in admin if they can login
         ];
