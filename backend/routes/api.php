@@ -51,6 +51,25 @@ Route::middleware('auth:web,employee')->group(function () {
         Route::put('/customers/{id}', [CustomerController::class, 'update']);
         Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
 
+        // Customer Tags
+        Route::get('/tags', [\App\Http\Controllers\CustomerTagController::class, 'index']);
+        Route::post('/tags', [\App\Http\Controllers\CustomerTagController::class, 'store']);
+        Route::post('/customers/{id}/tags', [\App\Http\Controllers\CustomerTagController::class, 'attach']);
+        Route::delete('/customers/{id}/tags/{tagId}', [\App\Http\Controllers\CustomerTagController::class, 'detach']);
+
+        // Customer Comments
+        Route::get('/customers/{id}/comments', [\App\Http\Controllers\CustomerCommentController::class, 'index']);
+        Route::post('/customers/{id}/comments', [\App\Http\Controllers\CustomerCommentController::class, 'store']);
+        Route::delete('/comments/{commentId}', [\App\Http\Controllers\CustomerCommentController::class, 'destroy']);
+
+        // Customer Attachments
+        Route::get('/customers/{id}/attachments', [\App\Http\Controllers\CustomerAttachmentController::class, 'index']);
+        Route::post('/customers/{id}/attachments', [\App\Http\Controllers\CustomerAttachmentController::class, 'store']);
+        Route::delete('/attachments/{attachmentId}', [\App\Http\Controllers\CustomerAttachmentController::class, 'destroy']);
+
+        // Customer Activities
+        Route::get('/customers/{id}/activities', [\App\Http\Controllers\CustomerActivityController::class, 'index']);
+
         // Events
         Route::get('/customers/{id}/events', [CustomerController::class, 'listEvents']);
         Route::post('/customers/{id}/events', [CustomerController::class, 'storeEvent']);

@@ -2,6 +2,43 @@
 import { Company, User, DashboardStats } from '../types';
 
 // CRM Types
+export interface CustomerTag {
+  id: string;
+  name: string;
+  color?: string;
+}
+
+export interface CustomerActivity {
+  id: string;
+  customer_id: string;
+  type: 'created' | 'updated' | 'status_changed' | 'comment' | 'attachment_added' | 'attachment_deleted' | 'event_created' | 'event_updated' | 'event_deleted';
+  title: string;
+  payload?: any;
+  created_at: string;
+  creator?: { id: string; name: string };
+}
+
+export interface CustomerComment {
+  id: string;
+  customer_id: string;
+  body: string;
+  created_at: string;
+  creator?: { id: string; name: string };
+}
+
+export interface CustomerAttachment {
+  id: string;
+  customer_id: string;
+  file_name: string;
+  file_path: string;
+  mime_type?: string;
+  file_size?: number;
+  note?: string;
+  created_at: string;
+  creator?: { id: string; name: string };
+  url?: string;
+}
+
 export interface Customer {
   id: string;
   full_name: string;
@@ -19,6 +56,9 @@ export interface Customer {
   collected_by_employee_id?: number;
   namecards?: CustomerNamecard[];
   events?: CustomerEvent[];
+  tags?: CustomerTag[];
+  comments_count?: number;
+  attachments_count?: number;
 }
 
 export interface CustomerNamecard {
@@ -143,7 +183,7 @@ interface ApiService {
   
   // CRM
   scanNamecard(formData: FormData): Promise<NamecardScanResult>;
-  listCustomers(params?: { status?: string, q?: string, page?: number }): Promise<PaginatedResponse<Customer>>;
+  listCustomers(params?: { status?: string, q?: string, tag?: string, page?: number }): Promise<PaginatedResponse<Customer>>;
   getCustomer(id: string): Promise<Customer>;
   createCustomer(customer: Partial<Customer>): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer>;
@@ -153,6 +193,22 @@ interface ApiService {
   createEvent(customerId: string, event: Partial<CustomerEvent>): Promise<CustomerEvent>;
   updateEvent(eventId: string, event: Partial<CustomerEvent>): Promise<CustomerEvent>;
   deleteEvent(eventId: string): Promise<void>;
+
+  // CRM Phase 2
+  listTags(): Promise<CustomerTag[]>;
+  createTag(tag: Partial<CustomerTag>): Promise<CustomerTag>;
+  attachTags(customerId: string, tagIds: string[]): Promise<CustomerTag[]>;
+  detachTag(customerId: string, tagId: string): Promise<void>;
+
+  listComments(customerId: string): Promise<PaginatedResponse<CustomerComment>>;
+  createComment(customerId: string, body: string): Promise<CustomerComment>;
+  deleteComment(commentId: string): Promise<void>;
+
+  listAttachments(customerId: string): Promise<CustomerAttachment[]>;
+  uploadAttachment(customerId: string, formData: FormData): Promise<CustomerAttachment>;
+  deleteAttachment(attachmentId: string): Promise<void>;
+
+  listActivities(customerId: string): Promise<PaginatedResponse<CustomerActivity>>;
 }
 
 // --- MOCK SERVICE IMPLEMENTATION ---
@@ -337,7 +393,8 @@ class MockApiService implements ApiService {
       data: [
         { 
           id: 'c1', full_name: 'Alice Wonder', customer_company_name: 'Wonderland', 
-          status: 'lead', created_at: '2023-10-01', email: 'alice@example.com' 
+          status: 'lead', created_at: '2023-10-01', email: 'alice@example.com',
+          tags: [{id: 't1', name: 'VIP', color: '#ff0000'}]
         },
         { 
           id: 'c2', full_name: 'Bob Builder', customer_company_name: 'Construction Co', 
@@ -355,7 +412,8 @@ class MockApiService implements ApiService {
     return { 
       id, full_name: 'Alice Wonder', customer_company_name: 'Wonderland', 
       status: 'lead', created_at: '2023-10-01', email: 'alice@example.com',
-      job_title: 'Explorer', phone: '555-0199', birthday: '1990-05-15'
+      job_title: 'Explorer', phone: '555-0199', birthday: '1990-05-15',
+      tags: [{id: 't1', name: 'VIP', color: '#ff0000'}]
     };
   }
 
@@ -392,6 +450,37 @@ class MockApiService implements ApiService {
 
   async deleteEvent(eventId: string): Promise<void> {
     await this.delay(300);
+  }
+
+  async listTags(): Promise<CustomerTag[]> {
+    return [{id: 't1', name: 'VIP', color: '#ff0000'}, {id: 't2', name: 'New', color: '#00ff00'}];
+  }
+  async createTag(tag: Partial<CustomerTag>): Promise<CustomerTag> {
+    return { id: 't_' + Math.random(), name: tag.name || 'New Tag', color: tag.color };
+  }
+  async attachTags(customerId: string, tagIds: string[]): Promise<CustomerTag[]> {
+    return [];
+  }
+  async detachTag(customerId: string, tagId: string): Promise<void> {}
+
+  async listComments(customerId: string): Promise<PaginatedResponse<CustomerComment>> {
+    return { data: [], current_page: 1, last_page: 1, total: 0 };
+  }
+  async createComment(customerId: string, body: string): Promise<CustomerComment> {
+    return { id: 'cm_' + Math.random(), customer_id: customerId, body, created_at: new Date().toISOString() };
+  }
+  async deleteComment(commentId: string): Promise<void> {}
+
+  async listAttachments(customerId: string): Promise<CustomerAttachment[]> {
+    return [];
+  }
+  async uploadAttachment(customerId: string, formData: FormData): Promise<CustomerAttachment> {
+    return { id: 'a_' + Math.random(), customer_id: customerId, file_name: 'test.pdf', file_path: '', created_at: new Date().toISOString() };
+  }
+  async deleteAttachment(attachmentId: string): Promise<void> {}
+
+  async listActivities(customerId: string): Promise<PaginatedResponse<CustomerActivity>> {
+    return { data: [], current_page: 1, last_page: 1, total: 0 };
   }
 }
 
@@ -520,10 +609,11 @@ class RealApiService implements ApiService {
     });
   }
 
-  async listCustomers(params?: { status?: string, q?: string, page?: number }): Promise<PaginatedResponse<Customer>> {
+  async listCustomers(params?: { status?: string, q?: string, tag?: string, page?: number }): Promise<PaginatedResponse<Customer>> {
     const query = new URLSearchParams();
     if (params?.status && params.status !== 'all') query.append('status', params.status);
     if (params?.q) query.append('q', params.q);
+    if (params?.tag) query.append('tag', params.tag);
     if (params?.page) query.append('page', params.page.toString());
     
     return this.request<PaginatedResponse<Customer>>(`/crm/customers?${query.toString()}`);
@@ -575,6 +665,69 @@ class RealApiService implements ApiService {
     return this.request<void>(`/crm/events/${eventId}`, {
       method: 'DELETE'
     });
+  }
+
+  // Phase 2
+  async listTags(): Promise<CustomerTag[]> {
+    return this.request<CustomerTag[]>('/crm/tags');
+  }
+
+  async createTag(tag: Partial<CustomerTag>): Promise<CustomerTag> {
+    return this.request<CustomerTag>('/crm/tags', {
+      method: 'POST',
+      body: JSON.stringify(tag)
+    });
+  }
+
+  async attachTags(customerId: string, tagIds: string[]): Promise<CustomerTag[]> {
+    return this.request<CustomerTag[]>(`/crm/customers/${customerId}/tags`, {
+      method: 'POST',
+      body: JSON.stringify({ tags: tagIds })
+    });
+  }
+
+  async detachTag(customerId: string, tagId: string): Promise<void> {
+    return this.request<void>(`/crm/customers/${customerId}/tags/${tagId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async listComments(customerId: string): Promise<PaginatedResponse<CustomerComment>> {
+    return this.request<PaginatedResponse<CustomerComment>>(`/crm/customers/${customerId}/comments`);
+  }
+
+  async createComment(customerId: string, body: string): Promise<CustomerComment> {
+    return this.request<CustomerComment>(`/crm/customers/${customerId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ body })
+    });
+  }
+
+  async deleteComment(commentId: string): Promise<void> {
+    return this.request<void>(`/crm/comments/${commentId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async listAttachments(customerId: string): Promise<CustomerAttachment[]> {
+    return this.request<CustomerAttachment[]>(`/crm/customers/${customerId}/attachments`);
+  }
+
+  async uploadAttachment(customerId: string, formData: FormData): Promise<CustomerAttachment> {
+    return this.request<CustomerAttachment>(`/crm/customers/${customerId}/attachments`, {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async deleteAttachment(attachmentId: string): Promise<void> {
+    return this.request<void>(`/crm/attachments/${attachmentId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async listActivities(customerId: string): Promise<PaginatedResponse<CustomerActivity>> {
+    return this.request<PaginatedResponse<CustomerActivity>>(`/crm/customers/${customerId}/activities`);
   }
 }
 

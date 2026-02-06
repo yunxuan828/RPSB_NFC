@@ -15,11 +15,25 @@ class Company extends Model
     
     // Helper to format for React Frontend
     public function toFrontendArray() {
+        // Ensure APP_URL is used correctly for asset generation
+        $logoUrl = null;
+        if ($this->logo_path) {
+            // Check if it's already a full URL (e.g. S3) or needs storage prefix
+            if (str_starts_with($this->logo_path, 'http')) {
+                $logoUrl = $this->logo_path;
+            } else {
+                // Use Storage::url() which respects filesystem config
+                // But for local/public disk, we might need to force the APP_URL
+                // asset() uses APP_URL from .env
+                $logoUrl = asset('storage/' . $this->logo_path);
+            }
+        }
+
         return [
             'id' => (string)$this->id,
             'name' => $this->name,
             'domain' => $this->domain,
-            'logoUrl' => $this->logo_path ? asset('storage/' . $this->logo_path) : null,
+            'logoUrl' => $logoUrl,
             'bio' => $this->bio,
             'address' => $this->address,
             'linkedin' => $this->linkedin,

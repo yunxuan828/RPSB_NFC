@@ -44,4 +44,24 @@ class Customer extends Model
     {
         return $this->belongsTo(Employee::class, 'collected_by_employee_id');
     }
+
+    public function tags()
+    {
+        return $this->belongsToMany(CustomerTag::class, 'customer_customer_tag', 'customer_id', 'tag_id');
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(CustomerActivity::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(CustomerComment::class);
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(CustomerAttachment::class);
+    }
 }

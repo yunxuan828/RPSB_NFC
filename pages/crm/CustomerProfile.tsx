@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   User, Building2, Phone, Mail, Globe, MapPin, Calendar as CalendarIcon, 
-  ArrowLeft, Edit, Trash2, Plus, Clock 
+  ArrowLeft, Edit, Trash2, Plus, Clock, MessageSquare, Paperclip, History, 
+  Save, X, FileText
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { api, Customer, CustomerEvent } from '../../services/api';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { api, Customer, CustomerEvent, CustomerActivity, CustomerComment, CustomerAttachment, CustomerTag } from '../../services/api';
 import { Modal } from '../../components/UI';
 import { auth } from '../../services/auth';
 
@@ -16,12 +18,21 @@ const CustomerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [events, setEvents] = useState<CustomerEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const currentUser = auth.getUser();
-  
-  // Event Modal State
+  const [activeTab, setActiveTab] = useState('profile');
+
+  // Sub-data states
+  const [events, setEvents] = useState<CustomerEvent[]>([]);
+  const [activities, setActivities] = useState<CustomerActivity[]>([]);
+  const [comments, setComments] = useState<CustomerComment[]>([]);
+  const [attachments, setAttachments] = useState<CustomerAttachment[]>([]);
+  const [tags, setTags] = useState<CustomerTag[]>([]);
+  const [availableTags, setAvailableTags] = useState<CustomerTag[]>([]);
+
+  // Modals & Inputs
   const [showEventModal, setShowEventModal] = useState(false);
+  const [commentInput, setCommentInput] = useState('');
   const [newEvent, setNewEvent] = useState<Partial<CustomerEvent>>({
     title: '',
     type: 'follow_up',
@@ -29,25 +40,129 @@ const CustomerProfile: React.FC = () => {
     notes: ''
   });
 
+  // Edit Profile State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Customer>>({});
+
   useEffect(() => {
     if (id) {
-      fetchData(id);
+      fetchCustomer();
+      fetchAvailableTags();
     }
   }, [id]);
 
-  const fetchData = async (customerId: string) => {
+  useEffect(() => {
+    if (id && activeTab === 'timeline') fetchActivities();
+    if (id && activeTab === 'comments') fetchComments();
+    if (id && activeTab === 'attachments') fetchAttachments();
+    if (id && activeTab === 'calendar') fetchEvents();
+  }, [id, activeTab]);
+
+  const fetchCustomer = async () => {
     setLoading(true);
     try {
-      const [custData, eventsData] = await Promise.all([
-        api.getCustomer(customerId),
-        api.listEvents(customerId)
-      ]);
-      setCustomer(custData);
-      setEvents(eventsData);
+      if (!id) return;
+      const data = await api.getCustomer(id);
+      setCustomer(data);
+      setEditForm(data);
     } catch (error) {
       console.error('Error fetching customer:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailableTags = async () => {
+    try {
+      const data = await api.listTags();
+      setAvailableTags(data);
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  const fetchEvents = async () => {
+    if (!id) return;
+    const data = await api.listEvents(id);
+    setEvents(data);
+  };
+
+  const fetchActivities = async () => {
+    if (!id) return;
+    const response = await api.listActivities(id);
+    setActivities(response.data);
+  };
+
+  const fetchComments = async () => {
+    if (!id) return;
+    const response = await api.listComments(id);
+    setComments(response.data);
+  };
+
+  const fetchAttachments = async () => {
+    if (!id) return;
+    const data = await api.listAttachments(id);
+    setAttachments(data);
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!id) return;
+    try {
+      await api.updateCustomer(id, editForm);
+      setIsEditing(false);
+      fetchCustomer();
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      alert('Failed to update profile');
+    }
+  };
+
+  const handleStatusChange = async (newStatus: any) => {
+    if (!id) return;
+    try {
+      await api.updateCustomer(id, { status: newStatus });
+      fetchCustomer();
+      // Also refresh timeline if active
+      if (activeTab === 'timeline') fetchActivities();
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!id || !commentInput.trim()) return;
+    try {
+      await api.createComment(id, commentInput);
+      setCommentInput('');
+      fetchComments();
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!id || !e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      await api.uploadAttachment(id, formData);
+      fetchAttachments();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload file');
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!confirm('Delete this file?')) return;
+    try {
+      await api.deleteAttachment(attachmentId);
+      fetchAttachments();
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
     }
   };
 
@@ -57,9 +172,26 @@ const CustomerProfile: React.FC = () => {
       await api.createEvent(id, newEvent);
       setShowEventModal(false);
       setNewEvent({ title: '', type: 'follow_up', start_at: '', notes: '' });
-      fetchData(id); // Refresh
+      fetchEvents();
     } catch (error) {
       console.error('Error creating event:', error);
+    }
+  };
+
+  const handleTagToggle = async (tagId: string) => {
+    if (!id || !customer) return;
+    const currentTagIds = customer.tags?.map(t => t.id) || [];
+    const isAttached = currentTagIds.includes(tagId);
+
+    try {
+      if (isAttached) {
+        await api.detachTag(id, tagId);
+      } else {
+        await api.attachTags(id, [tagId]);
+      }
+      fetchCustomer();
+    } catch (error) {
+      console.error('Error toggling tag:', error);
     }
   };
 
@@ -82,37 +214,48 @@ const CustomerProfile: React.FC = () => {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        {/* Determine navigation back path based on user role or history */}
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/crm/customers')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             {customer.full_name}
-            <Badge variant="outline" className="text-xs uppercase">{customer.status}</Badge>
+            <Badge variant={customer.status === 'active' ? 'default' : 'secondary'} className="uppercase">
+              {customer.status}
+            </Badge>
           </h1>
           <p className="text-slate-500">{customer.job_title} at {customer.customer_company_name}</p>
         </div>
         <div className="ml-auto flex gap-2">
+           <select 
+             className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+             value={customer.status}
+             onChange={(e) => handleStatusChange(e.target.value)}
+           >
+             <option value="lead">Lead</option>
+             <option value="active">Active</option>
+             <option value="silent">Silent</option>
+             <option value="inactive">Inactive</option>
+           </select>
           {(currentUser?.role === 'admin' || (currentUser?.role === 'employee' && customer.collected_by_employee_id == currentUser?.id)) && (
             <Button variant="destructive" size="sm" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-2" /> Delete Lead
+              <Trash2 className="h-4 w-4" />
             </Button>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Sidebar: Contact Info */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left Sidebar: Quick Info */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
+              <CardTitle className="text-sm font-medium uppercase text-slate-500">Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 text-sm">
                 <Mail className="h-4 w-4 text-slate-400" />
-                <a href={`mailto:${customer.email}`} className="text-blue-600 hover:underline">{customer.email || '-'}</a>
+                <a href={`mailto:${customer.email}`} className="text-blue-600 hover:underline truncate">{customer.email || '-'}</a>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Phone className="h-4 w-4 text-slate-400" />
@@ -120,95 +263,289 @@ const CustomerProfile: React.FC = () => {
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Globe className="h-4 w-4 text-slate-400" />
-                <a href={customer.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{customer.website || '-'}</a>
+                <a href={customer.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate">{customer.website || '-'}</a>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <MapPin className="h-4 w-4 text-slate-400" />
                 <span>{customer.address || '-'}</span>
               </div>
-              {customer.birthday && (
-                <div className="flex items-center gap-3 text-sm">
-                  <CalendarIcon className="h-4 w-4 text-slate-400" />
-                  <span>Birthday: {new Date(customer.birthday).toLocaleDateString()}</span>
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* Namecard Preview (Latest) */}
-          {customer.namecards && customer.namecards.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Latest Namecard</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <img 
-                  src={customer.namecards[0].front_image_url} 
-                  alt="Namecard Front" 
-                  className="w-full rounded-md border"
-                />
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+               <CardTitle className="text-sm font-medium uppercase text-slate-500">Tags</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {customer.tags && customer.tags.map(tag => (
+                  <span 
+                    key={tag.id} 
+                    className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold"
+                    style={{ backgroundColor: tag.color ? `${tag.color}20` : '#f1f5f9', color: tag.color || '#64748b' }}
+                  >
+                    {tag.name}
+                    <button onClick={() => handleTagToggle(tag.id)} className="ml-1 hover:text-red-500">×</button>
+                  </span>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs text-slate-500">Add Tags:</label>
+                <div className="flex flex-wrap gap-1">
+                   {availableTags.filter(t => !customer.tags?.some(ct => ct.id === t.id)).map(tag => (
+                     <Badge 
+                        key={tag.id} 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-slate-100"
+                        onClick={() => handleTagToggle(tag.id)}
+                     >
+                       + {tag.name}
+                     </Badge>
+                   ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Main: Tabs */}
-        <div className="lg:col-span-2">
-          {/* Simplified Tabs Implementation since I don't know if Tabs component works perfectly */}
-          <div className="bg-white rounded-lg border shadow-sm">
-            <div className="border-b px-4">
-               <nav className="flex -mb-px space-x-8" aria-label="Tabs">
-                  <span className="border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                    Overview & Events
-                  </span>
-                  {/* Future: Add more tabs like 'Notes', 'History' */}
-               </nav>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              
-              {/* Calendar / Events Section */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Calendar & Events</h3>
-                <Button size="sm" onClick={() => setShowEventModal(true)}>
-                  <Plus className="h-4 w-4 mr-1" /> Add Event
-                </Button>
-              </div>
+        <div className="lg:col-span-3">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              <TabsTrigger value="comments">Comments</TabsTrigger>
+              <TabsTrigger value="attachments">Files</TabsTrigger>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            </TabsList>
 
-              {events.length === 0 ? (
-                <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                  <CalendarIcon className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">No upcoming events scheduled.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {events.map(event => (
-                    <div key={event.id} className="flex items-start gap-4 p-4 border rounded-lg bg-slate-50">
-                      <div className="bg-blue-100 text-blue-700 p-2 rounded-md">
-                        <CalendarIcon className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <h4 className="font-semibold">{event.title}</h4>
-                          <span className="text-xs text-slate-500 capitalize px-2 py-1 bg-white border rounded-full">
-                            {event.type.replace('_', ' ')}
-                          </span>
-                        </div>
-                        <div className="text-sm text-slate-500 flex items-center gap-2 mt-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(event.start_at).toLocaleString()}
-                        </div>
-                        {event.notes && (
-                          <p className="text-sm mt-2 text-slate-600">{event.notes}</p>
-                        )}
-                      </div>
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="mt-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Customer Profile</CardTitle>
+                  {!isEditing ? (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit className="h-4 w-4 mr-2" /> Edit
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => { setIsEditing(false); setEditForm(customer); }}>
+                        Cancel
+                      </Button>
+                      <Button size="sm" onClick={handleUpdateProfile}>
+                        <Save className="h-4 w-4 mr-2" /> Save
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Full Name</label>
+                      <Input 
+                        disabled={!isEditing} 
+                        value={editForm.full_name || ''} 
+                        onChange={e => setEditForm({...editForm, full_name: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Job Title</label>
+                      <Input 
+                        disabled={!isEditing} 
+                        value={editForm.job_title || ''} 
+                        onChange={e => setEditForm({...editForm, job_title: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Company</label>
+                      <Input 
+                        disabled={!isEditing} 
+                        value={editForm.customer_company_name || ''} 
+                        onChange={e => setEditForm({...editForm, customer_company_name: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Email</label>
+                      <Input 
+                        disabled={!isEditing} 
+                        value={editForm.email || ''} 
+                        onChange={e => setEditForm({...editForm, email: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Phone</label>
+                      <Input 
+                        disabled={!isEditing} 
+                        value={editForm.phone || ''} 
+                        onChange={e => setEditForm({...editForm, phone: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Website</label>
+                      <Input 
+                        disabled={!isEditing} 
+                        value={editForm.website || ''} 
+                        onChange={e => setEditForm({...editForm, website: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-sm font-medium">Address</label>
+                      <Input 
+                        disabled={!isEditing} 
+                        value={editForm.address || ''} 
+                        onChange={e => setEditForm({...editForm, address: e.target.value})} 
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-            </div>
-          </div>
+            {/* Timeline Tab */}
+            <TabsContent value="timeline" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Activity History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-8">
+                    {activities.length === 0 ? (
+                      <p className="text-slate-500 text-center py-4">No activity yet.</p>
+                    ) : activities.map((activity) => (
+                      <div key={activity.id} className="flex gap-4">
+                        <div className="mt-1">
+                          <div className="bg-slate-100 p-2 rounded-full">
+                            <History className="h-4 w-4 text-slate-600" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{activity.title || activity.type.replace('_', ' ')}</p>
+                          <p className="text-xs text-slate-500">
+                            {new Date(activity.created_at).toLocaleString()} by {activity.creator?.name || 'System'}
+                          </p>
+                          {activity.payload && (
+                            <pre className="mt-2 text-xs bg-slate-50 p-2 rounded overflow-x-auto max-w-md">
+                              {JSON.stringify(activity.payload, null, 2)}
+                            </pre>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Comments Tab */}
+            <TabsContent value="comments" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Comments</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex gap-4">
+                    <Input 
+                      placeholder="Add a comment..." 
+                      value={commentInput}
+                      onChange={(e) => setCommentInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                    />
+                    <Button onClick={handleAddComment}>Post</Button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {comments.map(comment => (
+                      <div key={comment.id} className="bg-slate-50 p-4 rounded-lg border">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-semibold text-sm">{comment.creator?.name || 'Unknown'}</span>
+                          <span className="text-xs text-slate-500">{new Date(comment.created_at).toLocaleString()}</span>
+                        </div>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{comment.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Attachments Tab */}
+            <TabsContent value="attachments" className="mt-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Files & Attachments</CardTitle>
+                  <div>
+                    <input 
+                      type="file" 
+                      id="file-upload" 
+                      className="hidden" 
+                      onChange={handleFileUpload}
+                    />
+                    <label htmlFor="file-upload">
+                      <Button variant="outline" size="sm" asChild>
+                        <span className="cursor-pointer">
+                          <Paperclip className="h-4 w-4 mr-2" /> Upload File
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {attachments.map(file => (
+                        <div key={file.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                           <FileText className="h-8 w-8 text-blue-500" />
+                           <div className="flex-1 overflow-hidden">
+                             <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline truncate block">
+                               {file.file_name}
+                             </a>
+                             <p className="text-xs text-slate-500">
+                               {file.file_size ? Math.round(file.file_size / 1024) + ' KB' : '-'} • {new Date(file.created_at).toLocaleDateString()}
+                             </p>
+                           </div>
+                           <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-500" onClick={() => handleDeleteAttachment(file.id)}>
+                             <X className="h-4 w-4" />
+                           </Button>
+                        </div>
+                      ))}
+                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Calendar Tab */}
+            <TabsContent value="calendar" className="mt-6">
+               <Card>
+                 <CardHeader className="flex flex-row items-center justify-between">
+                   <CardTitle>Upcoming Events</CardTitle>
+                   <Button size="sm" onClick={() => setShowEventModal(true)}>
+                     <Plus className="h-4 w-4 mr-2" /> Add Event
+                   </Button>
+                 </CardHeader>
+                 <CardContent>
+                    {events.length === 0 ? (
+                      <p className="text-center py-8 text-slate-500">No events scheduled.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {events.map(event => (
+                          <div key={event.id} className="flex items-start gap-4 p-4 border rounded-lg bg-slate-50">
+                            <div className="bg-blue-100 text-blue-700 p-2 rounded-md">
+                              <CalendarIcon className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold">{event.title}</h4>
+                              <p className="text-sm text-slate-500">{new Date(event.start_at).toLocaleString()}</p>
+                              {event.notes && <p className="text-sm mt-1 text-slate-600">{event.notes}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                 </CardContent>
+               </Card>
+            </TabsContent>
+
+          </Tabs>
         </div>
       </div>
 
@@ -234,12 +571,11 @@ const CustomerProfile: React.FC = () => {
               onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
             />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Type</label>
               <select 
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                 value={newEvent.type}
                 onChange={(e) => setNewEvent(prev => ({ ...prev, type: e.target.value as any }))}
               >
@@ -258,13 +594,11 @@ const CustomerProfile: React.FC = () => {
               />
             </div>
           </div>
-
           <div className="space-y-2">
             <label className="text-sm font-medium">Notes</label>
-            <textarea 
-              className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            <Input 
               placeholder="Add details..."
-              value={newEvent.notes}
+              value={newEvent.notes || ''}
               onChange={(e) => setNewEvent(prev => ({ ...prev, notes: e.target.value }))}
             />
           </div>
