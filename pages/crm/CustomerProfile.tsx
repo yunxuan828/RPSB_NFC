@@ -415,17 +415,22 @@ const CustomerProfile: React.FC = () => {
                     ) : activities.map((activity) => (
                       <div key={activity.id} className="flex gap-4">
                         <div className="mt-1">
-                          <div className="bg-slate-100 p-2 rounded-full">
-                            <History className="h-4 w-4 text-slate-600" />
+                          <div className={`p-2 rounded-full ${activity.type === 'email_sent' ? 'bg-blue-100' : 'bg-slate-100'}`}>
+                            {activity.type === 'email_sent' ? <Mail className="h-4 w-4 text-blue-600" /> : <History className="h-4 w-4 text-slate-600" />}
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{activity.title || activity.type.replace('_', ' ')}</p>
+                          <p className="text-sm font-medium capitalize">{activity.title || activity.type.replace(/_/g, ' ')}</p>
                           <p className="text-xs text-slate-500">
                             {new Date(activity.created_at).toLocaleString()} by {activity.creator?.name || 'System'}
                           </p>
-                          {activity.payload && (
-                            <pre className="mt-2 text-xs bg-slate-50 p-2 rounded overflow-x-auto max-w-md">
+                          {activity.type === 'email_sent' && activity.payload ? (
+                              <div className="mt-2 text-sm bg-slate-50 p-3 rounded border space-y-1">
+                                  <div className="font-medium text-slate-900">{activity.payload.subject}</div>
+                                  <div className="text-xs text-slate-500">Sent to: {activity.payload.recipient_email}</div>
+                              </div>
+                          ) : activity.payload && (
+                            <pre className="mt-2 text-xs bg-slate-50 p-2 rounded overflow-x-auto max-w-md text-slate-600">
                               {JSON.stringify(activity.payload, null, 2)}
                             </pre>
                           )}

@@ -75,5 +75,23 @@ Route::middleware('auth:web,employee')->group(function () {
         Route::post('/customers/{id}/events', [CustomerController::class, 'storeEvent']);
         Route::put('/events/{eventId}', [CustomerController::class, 'updateEvent']);
         Route::delete('/events/{eventId}', [CustomerController::class, 'deleteEvent']);
+
+        // Email Module
+        Route::group(['prefix' => 'email'], function () {
+            // Templates
+            Route::get('/templates', [\App\Http\Controllers\Crm\EmailTemplateController::class, 'index']);
+            Route::post('/templates', [\App\Http\Controllers\Crm\EmailTemplateController::class, 'store']);
+            Route::get('/templates/{id}', [\App\Http\Controllers\Crm\EmailTemplateController::class, 'show']);
+            Route::put('/templates/{id}', [\App\Http\Controllers\Crm\EmailTemplateController::class, 'update']);
+            Route::post('/templates/{id}/duplicate', [\App\Http\Controllers\Crm\EmailTemplateController::class, 'duplicate']);
+
+            // Campaigns
+            Route::get('/campaigns', [\App\Http\Controllers\Crm\EmailCampaignController::class, 'index']);
+            Route::post('/campaigns', [\App\Http\Controllers\Crm\EmailCampaignController::class, 'store']);
+            Route::get('/campaigns/{id}', [\App\Http\Controllers\Crm\EmailCampaignController::class, 'show']);
+            Route::get('/campaigns/{id}/recipients', [\App\Http\Controllers\Crm\EmailCampaignController::class, 'recipients']);
+            Route::post('/campaigns/preview', [\App\Http\Controllers\Crm\EmailCampaignController::class, 'preview']);
+            Route::post('/campaigns/{id}/send', [\App\Http\Controllers\Crm\EmailCampaignController::class, 'send']);
+        });
     });
 });

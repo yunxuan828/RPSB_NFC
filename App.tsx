@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, Users as UsersIcon, CreditCard, LogOut, Menu, X, Contact } from 'lucide-react';
+import { LayoutDashboard, Building2, Users as UsersIcon, CreditCard, LogOut, Menu, X, Contact, Mail, Send } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Companies from './pages/Companies';
 import Users from './pages/Users';
@@ -10,6 +10,11 @@ import PublicProfile from './pages/PublicProfile';
 import ScanNamecard from './pages/crm/ScanNamecard';
 import Customers from './pages/crm/Customers';
 import CustomerProfile from './pages/crm/CustomerProfile';
+import EmailTemplates from './pages/crm/email/EmailTemplates';
+import EmailTemplateEditor from './pages/crm/email/EmailTemplateEditor';
+import EmailCampaigns from './pages/crm/email/EmailCampaigns';
+import EmailCampaignBuilder from './pages/crm/email/EmailCampaignBuilder';
+import EmailCampaignDetails from './pages/crm/email/EmailCampaignDetails';
 import PortalHome from './pages/portal/PortalHome';
 import PortalScan from './pages/portal/PortalScan';
 import Login from './pages/Login';
@@ -96,6 +101,8 @@ const App: React.FC = () => {
         <div className="pt-4 mt-4 border-t border-slate-100">
           <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">CRM</p>
           <NavLink to="/crm/customers" icon={Contact} onClick={onLinkClick}>Customers</NavLink>
+          <NavLink to="/crm/email/templates" icon={Mail} onClick={onLinkClick}>Email Templates</NavLink>
+          <NavLink to="/crm/email/campaigns" icon={Send} onClick={onLinkClick}>Campaigns</NavLink>
         </div>
 
         <div className="pt-4 mt-4 border-t border-slate-100">
@@ -219,6 +226,14 @@ const App: React.FC = () => {
                 <Route path="/crm/scan" element={<ScanNamecard />} />
                 <Route path="/crm/customers" element={<Customers />} />
                 <Route path="/crm/customers/:id" element={<CustomerProfile />} />
+                
+                {/* Email Module */}
+                <Route path="/crm/email/templates" element={<EmailTemplates />} />
+                <Route path="/crm/email/templates/new" element={<EmailTemplateEditor />} />
+                <Route path="/crm/email/templates/:id" element={<EmailTemplateEditor />} />
+                <Route path="/crm/email/campaigns" element={<EmailCampaigns />} />
+                <Route path="/crm/email/campaigns/new" element={<EmailCampaignBuilder />} />
+                <Route path="/crm/email/campaigns/:id" element={<EmailCampaignDetails />} />
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

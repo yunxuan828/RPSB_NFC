@@ -42,6 +42,34 @@ services:
     depends_on:
       - backend
 
+  queue-worker:
+    container_name: nfc-v2-queue
+    build:
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
+    restart: unless-stopped
+    working_dir: /var/www/backend
+    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    volumes:
+      - ../../backend:/var/www/backend
+      - ./php.ini:/usr/local/etc/php/conf.d/app-php.ini
+    environment:
+      APP_NAME: 'Ritma DBC'
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      APP_URL: '${APP_URL:-http://45.127.6.225:8600}'
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ritma_nfc_db
+      DB_USERNAME: ritma_nfc_user
+      DB_PASSWORD: ritma_nfc_password
+      OCR_URL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+      OPENROUTER_API_KEY: '${OPENROUTER_API_KEY}'
+    depends_on:
+      - db
+      - backend
+
   db:
     container_name: nfc-v2-db
     image: mariadb:10.6

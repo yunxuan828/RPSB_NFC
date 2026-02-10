@@ -18,6 +18,48 @@ export interface CustomerActivity {
   creator?: { id: string; name: string };
 }
 
+export interface EmailTemplate {
+  id: string;
+  template_code: string;
+  name: string;
+  subject: string;
+  body_html: string;
+  body_text?: string;
+  variables?: string[];
+  status: 'draft' | 'locked';
+  locked_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailCampaign {
+  id: string;
+  campaign_code: string;
+  template_id: string;
+  template?: EmailTemplate;
+  name: string;
+  audience_snapshot: any;
+  status: 'draft' | 'queued' | 'sending' | 'completed' | 'failed' | 'cancelled';
+  queued_at?: string;
+  started_at?: string;
+  completed_at?: string;
+  totals?: { target: number; sent: number; failed: number; skipped: number };
+  created_at: string;
+  recipients?: EmailCampaignRecipient[];
+}
+
+export interface EmailCampaignRecipient {
+  id: string;
+  campaign_id: string;
+  customer_id: string;
+  customer?: Customer;
+  email: string;
+  status: 'queued' | 'sent' | 'failed' | 'skipped';
+  error_message?: string;
+  sent_at?: string;
+  created_at: string;
+}
+
 export interface CustomerComment {
   id: string;
   customer_id: string;
@@ -209,6 +251,21 @@ interface ApiService {
   deleteAttachment(attachmentId: string): Promise<void>;
 
   listActivities(customerId: string): Promise<PaginatedResponse<CustomerActivity>>;
+
+  // Email Templates
+  listEmailTemplates(page?: number): Promise<PaginatedResponse<EmailTemplate>>;
+  getEmailTemplate(id: string): Promise<EmailTemplate>;
+  createEmailTemplate(data: Partial<EmailTemplate>): Promise<EmailTemplate>;
+  updateEmailTemplate(id: string, data: Partial<EmailTemplate>): Promise<EmailTemplate>;
+  duplicateEmailTemplate(id: string): Promise<EmailTemplate>;
+
+  // Email Campaigns
+  listEmailCampaigns(page?: number): Promise<PaginatedResponse<EmailCampaign>>;
+  getEmailCampaign(id: string): Promise<EmailCampaign>;
+  createEmailCampaign(data: { template_id: string; name: string; audience_snapshot: any }): Promise<EmailCampaign>;
+  previewEmailCampaign(criteria: any): Promise<{ count: number; sample: Customer[]; criteria: any }>;
+  sendEmailCampaign(id: string): Promise<EmailCampaign>;
+  getEmailCampaignRecipients(id: string, status?: string, page?: number): Promise<PaginatedResponse<EmailCampaignRecipient>>;
 }
 
 // --- MOCK SERVICE IMPLEMENTATION ---
@@ -482,6 +539,43 @@ class MockApiService implements ApiService {
   async listActivities(customerId: string): Promise<PaginatedResponse<CustomerActivity>> {
     return { data: [], current_page: 1, last_page: 1, total: 0 };
   }
+
+  // Email Templates
+  async listEmailTemplates(page?: number): Promise<PaginatedResponse<EmailTemplate>> {
+    return { data: [], current_page: 1, last_page: 1, total: 0 };
+  }
+  async getEmailTemplate(id: string): Promise<EmailTemplate> {
+    return { id, template_code: 'ET-MOCK', name: 'Mock Template', subject: 'Mock Subject', body_html: '<p>Mock</p>', status: 'draft', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+  }
+  async createEmailTemplate(data: Partial<EmailTemplate>): Promise<EmailTemplate> {
+    return { ...data, id: 'et_' + Math.random(), template_code: 'ET-NEW', status: 'draft', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as EmailTemplate;
+  }
+  async updateEmailTemplate(id: string, data: Partial<EmailTemplate>): Promise<EmailTemplate> {
+    return { ...data, id, template_code: 'ET-UPD', status: 'draft', created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as EmailTemplate;
+  }
+  async duplicateEmailTemplate(id: string): Promise<EmailTemplate> {
+    return { id: 'et_' + Math.random(), template_code: 'ET-COPY', name: 'Copy', subject: 'Copy', body_html: '<p>Copy</p>', status: 'draft', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+  }
+
+  // Email Campaigns
+  async listEmailCampaigns(page?: number): Promise<PaginatedResponse<EmailCampaign>> {
+    return { data: [], current_page: 1, last_page: 1, total: 0 };
+  }
+  async getEmailCampaign(id: string): Promise<EmailCampaign> {
+    return { id, campaign_code: 'EC-MOCK', template_id: 't1', name: 'Mock Campaign', audience_snapshot: {}, status: 'draft', created_at: new Date().toISOString() };
+  }
+  async createEmailCampaign(data: { template_id: string; name: string; audience_snapshot: any }): Promise<EmailCampaign> {
+    return { ...data, id: 'ec_' + Math.random(), campaign_code: 'EC-NEW', status: 'draft', created_at: new Date().toISOString() };
+  }
+  async previewEmailCampaign(criteria: any): Promise<{ count: number; sample: Customer[]; criteria: any }> {
+    return { count: 0, sample: [], criteria };
+  }
+  async sendEmailCampaign(id: string): Promise<EmailCampaign> {
+    return { id, campaign_code: 'EC-SENT', template_id: 't1', name: 'Sent Campaign', audience_snapshot: {}, status: 'queued', created_at: new Date().toISOString() };
+  }
+  async getEmailCampaignRecipients(id: string, status?: string, page?: number): Promise<PaginatedResponse<EmailCampaignRecipient>> {
+    return { data: [], current_page: 1, last_page: 1, total: 0 };
+  }
 }
 
 // --- REAL LARAVEL API SERVICE IMPLEMENTATION ---
@@ -728,6 +822,62 @@ class RealApiService implements ApiService {
 
   async listActivities(customerId: string): Promise<PaginatedResponse<CustomerActivity>> {
     return this.request<PaginatedResponse<CustomerActivity>>(`/crm/customers/${customerId}/activities`);
+  }
+
+  // Email Templates
+  async listEmailTemplates(page?: number): Promise<PaginatedResponse<EmailTemplate>> {
+    return this.request<PaginatedResponse<EmailTemplate>>(`/crm/email/templates${page ? `?page=${page}` : ''}`);
+  }
+  async getEmailTemplate(id: string): Promise<EmailTemplate> {
+    return this.request<EmailTemplate>(`/crm/email/templates/${id}`);
+  }
+  async createEmailTemplate(data: Partial<EmailTemplate>): Promise<EmailTemplate> {
+    return this.request<EmailTemplate>('/crm/email/templates', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+  async updateEmailTemplate(id: string, data: Partial<EmailTemplate>): Promise<EmailTemplate> {
+    return this.request<EmailTemplate>(`/crm/email/templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+  async duplicateEmailTemplate(id: string): Promise<EmailTemplate> {
+    return this.request<EmailTemplate>(`/crm/email/templates/${id}/duplicate`, {
+      method: 'POST'
+    });
+  }
+
+  // Email Campaigns
+  async listEmailCampaigns(page?: number): Promise<PaginatedResponse<EmailCampaign>> {
+    return this.request<PaginatedResponse<EmailCampaign>>(`/crm/email/campaigns${page ? `?page=${page}` : ''}`);
+  }
+  async getEmailCampaign(id: string): Promise<EmailCampaign> {
+    return this.request<EmailCampaign>(`/crm/email/campaigns/${id}`);
+  }
+  async createEmailCampaign(data: { template_id: string; name: string; audience_snapshot: any }): Promise<EmailCampaign> {
+    return this.request<EmailCampaign>('/crm/email/campaigns', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+  async previewEmailCampaign(criteria: any): Promise<{ count: number; sample: Customer[]; criteria: any }> {
+    return this.request<{ count: number; sample: Customer[]; criteria: any }>('/crm/email/campaigns/preview', {
+      method: 'POST',
+      body: JSON.stringify(criteria)
+    });
+  }
+  async sendEmailCampaign(id: string): Promise<EmailCampaign> {
+    return this.request<EmailCampaign>(`/crm/email/campaigns/${id}/send`, {
+      method: 'POST'
+    });
+  }
+  async getEmailCampaignRecipients(id: string, status?: string, page?: number): Promise<PaginatedResponse<EmailCampaignRecipient>> {
+    const query = new URLSearchParams();
+    if (status) query.append('status', status);
+    if (page) query.append('page', page.toString());
+    return this.request<PaginatedResponse<EmailCampaignRecipient>>(`/crm/email/campaigns/${id}/recipients?${query.toString()}`);
   }
 }
 
